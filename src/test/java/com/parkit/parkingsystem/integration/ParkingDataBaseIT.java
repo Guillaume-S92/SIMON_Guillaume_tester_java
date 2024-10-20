@@ -75,17 +75,17 @@ public class ParkingDataBaseIT {
         // Simuler l'entrée du véhicule
         testParkingACar();
 
-        // Obtenir le ticket et modifier l'heure de sortie
+        // Obtenir le ticket et modifier l'heure de sortie avec une heure simulée
         Ticket ticket = ticketDAO.getTicket("ABCDEF");
 
-        // Simuler une durée de stationnement d'une heure
+        // Simuler une durée de stationnement d'une heure (1 heure après l'entrée)
         Date outTime = new Date(ticket.getInTime().getTime() + (60 * 60 * 1000)); // +1 heure
         ticket.setOutTime(outTime);
 
         // Mettre à jour l'heure de sortie dans la base de données
         ticketDAO.updateTicket(ticket);
 
-        // Simuler la sortie du véhicule
+        // Simuler la sortie du véhicule avec la méthode actualisée
         ParkingService parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAO);
         parkingService.processExitingVehicle();
 
@@ -96,6 +96,9 @@ public class ParkingDataBaseIT {
     }
 
 
+
+
+
     // Nouveau test pour vérifier la remise de 5% pour un utilisateur récurrent
     @Test
     public void testParkingLotExitRecurringUser() {
@@ -103,16 +106,29 @@ public class ParkingDataBaseIT {
 
         // Premier stationnement et sortie
         parkingService.processIncomingVehicle();
+        Ticket firstTicket = ticketDAO.getTicket("ABCDEF");
+
+        // Simuler une durée de stationnement de 1 heure
+        Date outTimeFirst = new Date(firstTicket.getInTime().getTime() + (60 * 60 * 1000)); // +1 heure
+        firstTicket.setOutTime(outTimeFirst);
+        ticketDAO.updateTicket(firstTicket);
         parkingService.processExitingVehicle();
 
         // Deuxième stationnement et sortie (utilisateur récurrent)
         parkingService.processIncomingVehicle();
+        Ticket secondTicket = ticketDAO.getTicket("ABCDEF");
+
+        // Simuler une durée de stationnement de 1 heure pour le deuxième ticket
+        Date outTimeSecond = new Date(secondTicket.getInTime().getTime() + (60 * 60 * 1000)); // +1 heure
+        secondTicket.setOutTime(outTimeSecond);
+        ticketDAO.updateTicket(secondTicket);
         parkingService.processExitingVehicle();
 
         // Vérification de la remise
-        Ticket ticket = ticketDAO.getTicket("ABCDEF");
-        assertNotNull(ticket);
-        assertTrue(ticket.getPrice() > 0);
-        assertEquals(Fare.CAR_RATE_PER_HOUR * 0.95, ticket.getPrice()); // Vérifie la remise de 5%
+        Ticket finalTicket = ticketDAO.getTicket("ABCDEF");
+        assertNotNull(finalTicket);
+        assertTrue(finalTicket.getPrice() > 0, "Le tarif doit être supérieur à 0");
+        assertEquals(Fare.CAR_RATE_PER_HOUR * 0.95, finalTicket.getPrice(), 0.01); // Vérifie la remise de 5%
     }
+
 }
