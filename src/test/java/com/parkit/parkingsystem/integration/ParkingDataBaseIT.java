@@ -17,6 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Date;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
@@ -69,17 +71,30 @@ public class ParkingDataBaseIT {
     }
 
     @Test
-    public void testParkingLotExit(){
+    public void testParkingLotExit() {
+        // Simuler l'entrée du véhicule
         testParkingACar();
+
+        // Obtenir le ticket et modifier l'heure de sortie
+        Ticket ticket = ticketDAO.getTicket("ABCDEF");
+
+        // Simuler une durée de stationnement d'une heure
+        Date outTime = new Date(ticket.getInTime().getTime() + (60 * 60 * 1000)); // +1 heure
+        ticket.setOutTime(outTime);
+
+        // Mettre à jour l'heure de sortie dans la base de données
+        ticketDAO.updateTicket(ticket);
+
+        // Simuler la sortie du véhicule
         ParkingService parkingService = new ParkingService(inputReaderUtil, parkingSpotDAO, ticketDAO);
         parkingService.processExitingVehicle();
 
-        // Vérifie que le ticket a bien été mis à jour dans la base de données
-        Ticket ticket = ticketDAO.getTicket("ABCDEF");
-        assertNotNull(ticket);
-        assertNotNull(ticket.getOutTime()); // L'heure de sortie doit être remplie
-        assertTrue(ticket.getPrice() > 0); // Le prix doit être supérieur à 0
+        // Vérifier que l'heure de sortie est bien enregistrée et que le tarif est supérieur à 0
+        ticket = ticketDAO.getTicket("ABCDEF");
+        assertNotNull(ticket.getOutTime(), "L'heure de sortie ne doit pas être null");
+        assertTrue(ticket.getPrice() > 0, "Le tarif doit être supérieur à 0");
     }
+
 
     // Nouveau test pour vérifier la remise de 5% pour un utilisateur récurrent
     @Test
